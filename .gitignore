@@ -24,5 +24,4 @@ yarn-error.log*
 
 .env
 
-/config
-
+src/config/mongodb.js
