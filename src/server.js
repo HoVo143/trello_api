@@ -1,27 +1,60 @@
 
 import express from 'express'
-import { mapOrder } from '~/utils/sorts.js'
+import { CONNECT_DB, CLOSE_DB } from '~/config/mongodb'
+import exitHook from 'async-exit-hook'
+import { env } from '~/config/environment'
 
-const app = express()
+const START_SERVER = () => {
+  const app = express()
 
-const hostname = 'localhost'
-const port = 8017
+  app.get('/', (req, res) => {
+    // console.log(await GET_DB().listCollections().toArray())
+    res.end('<h1>Hello World!</h1><hr>')
+  })
+  app.listen(env.APP_PORT, env.APP_HOST, () => {
+    console.log(`3. __Hello ${env.AUTHOR}, I am running at Host: ${ env.APP_HOST } and Port: ${ env.APP_PORT }`)
+  })
 
-app.get('/', (req, res) => {
-  // Test Absolute import mapOrder
-  console.log(mapOrder(
-    [ { id: 'id-1', name: 'One' },
-      { id: 'id-2', name: 'Two' },
-      { id: 'id-3', name: 'Three' },
-      { id: 'id-4', name: 'Four' },
-      { id: 'id-5', name: 'Five' } ],
-    ['id-5', 'id-4', 'id-2', 'id-3', 'id-1'],
-    'id'
-  ))
-  res.end('<h1>Hello World!</h1><hr>')
-})
+  // Xử lý tín hiệu SIGINT (Interrupt Signal) và SIGTERM (Termination Signal)
+  process.on('SIGINT', async() => {
+    console.log('4.__Exiting__')
+    await CLOSE_DB() // Thực hiện các bước để đóng kết nối cơ sở dữ liệu
+    process.exit(0) // Thoát với mã 0 (không có lỗi)
+  })
 
-app.listen(port, hostname, () => {
-  // eslint-disable-next-line no-console
-  console.log(`Hello HoDev, I am running at http://${ hostname }:${ port }/`)
-})
+  // ko thể sử dụng exitHook vì ko hợp vs window
+  // exitHook(() => {
+  //   console.log('4. __Exiting__')
+  //   CLOSE_DB()
+  //   console.log('5. __Exiting__')
+  // })
+}
+
+// chỉ khi kết nối tới database thành công thì mới star server backend lên
+// dạng anonymous async function (từ khóa: IIFE)
+(async () => {
+  try {
+    console.log('1. __connecting to mongodb cloud atlas... ')
+    await CONNECT_DB()
+    console.log('2. __connected to mongodb cloud atlas!')
+    // khởi động server backend sau khi connect database thành công
+    START_SERVER()
+  }
+  catch (error) {
+    // khi có lỗi sẽ catch ra xong dùng exit để dừng lại
+    console.error(error)
+    process.exit(0)
+  }
+})()
+
+// chỉ khi kết nối tới database thành công thì mới star server backend lên
+// console.log('1. connecting to mongodb cloud atlas... ')
+// CONNECT_DB()
+//   .then(() => console.log('2. connected to mongodb cloud atlas!'))
+//   .then(() => START_SERVER())
+//   .catch(error => {
+//     console.error(error)
+//     // khi có lỗi sẽ catch ra xong dùng exit để dừng lại
+//     process.exit(0)
+//   })
+
