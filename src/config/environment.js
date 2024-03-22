@@ -1,5 +1,6 @@
 
-
+// Khi bạn import 'dotenv/config', thư viện sẽ tự động tải tệp .env từ thư mục gốc của dự án của bạn 
+// và cấu hình các biến môi trường được xác định trong tệp đó.
 // console.log('from environment: ', process.env.MONGODB_URI)
 import 'dotenv/config'
 
