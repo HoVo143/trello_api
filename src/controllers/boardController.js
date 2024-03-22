@@ -7,7 +7,7 @@ const createNew = async (req, res, next) => {
 
     // điều hướng dữ liệu sang tầng service
 
-    // throw new ApiError(StatusCodes.BAD_GATEWAY, 'error hodev')
+
     // có kết quả thì trả về
     res.status(StatusCodes.CREATED).json({ message: 'POST: Apis create new broad.' })
   }
