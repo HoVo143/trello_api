@@ -8,8 +8,13 @@ import { APIs_V1 } from '~/routes/v1'
 const START_SERVER = () => {
   const app = express()
 
+  //Enable req.body json data
+  app.use(express.json())
+
+  // use api v1
   app.use('/v1', APIs_V1)
 
+  // Khởi động máy chủ
   app.listen(env.APP_PORT, env.APP_HOST, () => {
     console.log(`3. __Hello ${env.AUTHOR}, I am running at Host: ${ env.APP_HOST } and Port: ${ env.APP_PORT }`)
   })
