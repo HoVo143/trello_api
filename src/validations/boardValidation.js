@@ -1,6 +1,7 @@
 
 import Joi from 'joi'
 import { StatusCodes } from 'http-status-codes'
+import ApiError from '~/utils/ApiError'
 
 const createNew = async (req, res, next) => {
   // mặc định ta ko cần phải custom message ở phía BE vì để cho FE tự validate và custom message ở phía FE cho đẹp
@@ -30,10 +31,10 @@ const createNew = async (req, res, next) => {
 
   } catch (error) {
     // console.log(error)
-    // console.log(new Error(error)) //trả về kiểu string
-    res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
-      errors: new Error(error).message
-    }) // mã 422 (UNPROCESSABLE_ENTITY): dữ liệu ko thể thực thi
+    next(new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, Error(error).message)) // mã 422 (UNPROCESSABLE_ENTITY): dữ liệu ko thể thực thi
+    // res.status(StatusCodes.UNPROCESSABLE_ENTITY).json({
+    //   errors: new Error(error).message
+    // })
   }
 }
 
