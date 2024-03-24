@@ -1,7 +1,7 @@
 import Joi from 'joi'
 import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from '~/utils/validators'
 import { GET_DB } from '~/config/mongodb'
-import { ObjectId } from 'mongodb'
+import { ObjectId, ReturnDocument } from 'mongodb'
 import { BOARD_TYPES } from '~/utils/constants'
 import { columnModel } from './columnModel'
 import { cardModel } from './cardModel'
@@ -44,6 +44,7 @@ const createNew = async (data) => {
 
 //khi làm backend sẽ gặp rất nhiều
 // findOneById chỉ để lấy dữ liệu board
+//sử dụng để tìm kiếm một tài liệu trong collection của MongoDB dựa trên một id cụ thể.
 const findOneById = async(id) => {
   try {
     // console.log( 'Id string: ', id)
@@ -82,11 +83,25 @@ const getDetails = async(id) => {
         as: 'cards' // tên as: ko cố định mà do chúng ta tự định nghĩa ra
       } }
     ]).toArray() // phải có toArray để trả về dữ liệu chuẩn
-    return result[0] || {}
+    return result[0] || null
     // thường aggregate sẽ trả về mảng và mục đích chỉ lấy 1 phần tử nên dùng result[0] để lấy ra pt đầu tiên
-    // còn nếu ko có sẽ trả về rỗng {}
+    // còn nếu ko có sẽ trả về null
   }
   catch (error) {
+    throw new Error(error)
+  }
+}
+// Nhiệm vụ function này là push 1 cái giá trị columnId vào cuối mảng columnOrderIds
+const pushColumnOrderIds = async (column) => {
+  try {
+    //findOneAndUpdate tìm 1 bản ghi và sau đó cập nhật
+    const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(column.boardId) },
+      { $push: { columnOrderIds: new ObjectId(column._id) } },
+      { ReturnDocument: 'after' } // trả về document mới sau khi đã cập nhật
+    )
+    return result.value
+  } catch (error) {
     throw new Error(error)
   }
 }
@@ -96,7 +111,8 @@ export const boardModel = {
   BOARD_COLLECTION_SCHEMA,
   createNew,
   findOneById,
-  getDetails
+  getDetails,
+  pushColumnOrderIds
 }
 
 //65ffd1f4de0cc75a2b7099d9
