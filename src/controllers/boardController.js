@@ -19,6 +19,21 @@ const createNew = async (req, res, next) => {
   }
 }
 
+const getDetails = async (req, res, next) => {
+  try {
+    // console.log( 'req.params', req.params) //http://localhost:8017/v1/boards/id-123?author=hodev&height=170cm
+    const boardId = req.params.id
+    //sau này sẽ có thêm userId nữa để chỉ lấy board thuộc về user đó thôi
+    const board = await boardService.getDetails(boardId)
+
+    res.status(StatusCodes.OK).json(board)
+  }
+  catch (error) {
+    next(error)
+  }
+}
+
 export const boardController = {
-  createNew
+  createNew,
+  getDetails
 }

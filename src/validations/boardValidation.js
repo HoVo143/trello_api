@@ -2,6 +2,7 @@
 import Joi from 'joi'
 import { StatusCodes } from 'http-status-codes'
 import ApiError from '~/utils/ApiError'
+import { BOARD_TYPES } from '~/utils/constants'
 
 const createNew = async (req, res, next) => {
   // mặc định ta ko cần phải custom message ở phía BE vì để cho FE tự validate và custom message ở phía FE cho đẹp
@@ -18,12 +19,13 @@ const createNew = async (req, res, next) => {
       'string.min': 'title min 3',
       'string.max': 'title max 50'
     }),
-    description: Joi.string().required().min(3).max(256).trim().strict()
+    description: Joi.string().required().min(3).max(256).trim().strict(),
+    type: Joi.string().valid(...Object.values(BOARD_TYPES)).required()
 
   })
   try {
     // console.log( 'req.body', req.body)
-    // abortEarly mặc định là true kiểm tra xem validate có dừng sớm hay ko / đổi nó về false để hiển thị tất cả dữ liệu rỗng 
+    // abortEarly mặc định là true kiểm tra xem validate có dừng sớm hay ko / đổi nó về false để hiển thị tất cả dữ liệu rỗng
     await correctCondition.validateAsync(req.body, { abortEarly: false }) // kiểm tra xem cái req.body dữ liệu gửi lên nó có đúng với thực thể correctCondition nó có phù hợp với đk dữ liệu đưa lên ko
 
     //dùng next để khi boardValidation.createNew chạy oke, hợp lệ rồi sẽ sang boardController.createNew

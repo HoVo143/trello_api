@@ -12,4 +12,8 @@ Router.route('/')
   //sử dụng next() bên file boardValidation để khi boardValidation.createNew chạy oke rồi sẽ sang boardController.createNew
   .post(boardValidation.createNew, boardController.createNew) //sử dụng post để tạo mới bảng
 
+Router.route('/:id')
+  .get(boardController.getDetails)
+  .put() // update
+
 export const boardRoute = Router

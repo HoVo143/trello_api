@@ -1,7 +1,9 @@
 
 import express from 'express'
-import { CONNECT_DB, CLOSE_DB } from '~/config/mongodb'
+import cors from 'cors'
+import { corsOptions } from './config/cors'
 import exitHook from 'async-exit-hook'
+import { CONNECT_DB, CLOSE_DB } from '~/config/mongodb'
 import { env } from '~/config/environment'
 import { APIs_V1 } from '~/routes/v1'
 import { errorHandlingMiddleware } from './middlewares/errorHandlingMiddleware'
@@ -9,7 +11,12 @@ import { errorHandlingMiddleware } from './middlewares/errorHandlingMiddleware'
 const START_SERVER = () => {
   const app = express()
 
+  // cơ chế Cors để chặn truy cập tài nguyên từ các truy cập độc hại
+  // corsOptions giúp tránh mọi nơi có thể truy cập tài nguyên
+  app.use(cors(corsOptions))
   // Enable req.body json data
+  // /Khi một yêu cầu HTTP gửi đến máy chủ Express với dữ liệu dưới dạng JSON (ví dụ: từ một yêu cầu POST hoặc PUT), 
+  //middleware này sẽ đọc và phân tích dữ liệu JSON và biến nó thành một đối tượng JavaScript trước khi chuyển nó đến các xử lý yêu cầu tiếp theo.
   app.use(express.json())
 
   // use api v1
