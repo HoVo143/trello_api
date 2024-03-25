@@ -3,6 +3,7 @@ import Joi from 'joi'
 import { StatusCodes } from 'http-status-codes'
 import ApiError from '~/utils/ApiError'
 import { BOARD_TYPES } from '~/utils/constants'
+import { OBJECT_ID_RULE, OBJECT_ID_RULE_MESSAGE } from '~/utils/validators'
 
 const createNew = async (req, res, next) => {
   // mặc định ta ko cần phải custom message ở phía BE vì để cho FE tự validate và custom message ở phía FE cho đẹp
@@ -12,13 +13,7 @@ const createNew = async (req, res, next) => {
   const correctCondition = Joi.object({
     //required: bắt buộc, min: tối thiểu 3 ký tự, max: tối đa 50 ký tự
     //trim() phải đi chung với strict(): làm cho ko có khoảng trống ở đầu và cuối ở dữ liệu
-    title: Joi.string().required().min(3).max(50).trim().strict().messages({
-      'any.required': 'title is required',
-      'string.trim': 'title must not have leading or trailing whitespace',
-      'string.empty': 'title is not allowed to be empty',
-      'string.min': 'title min 3',
-      'string.max': 'title max 50'
-    }),
+    title: Joi.string().required().min(3).max(50).trim().strict(),
     description: Joi.string().required().min(3).max(256).trim().strict(),
     type: Joi.string().valid(...Object.values(BOARD_TYPES)).required()
 
@@ -40,6 +35,57 @@ const createNew = async (req, res, next) => {
   }
 }
 
+const update = async (req, res, next) => {
+  // ko dùng required() trong trường hợp update
+  const correctCondition = Joi.object({
+    //required: bắt buộc, min: tối thiểu 3 ký tự, max: tối đa 50 ký tự
+    //trim() phải đi chung với strict(): làm cho ko có khoảng trống ở đầu và cuối ở dữ liệu
+    title: Joi.string().min(3).max(50).trim().strict(),
+    description: Joi.string().min(3).max(256).trim().strict(),
+    type: Joi.string().valid(...Object.values(BOARD_TYPES)),
+    columnOrderIds: Joi.array().items(
+      Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
+    )
+
+  })
+  try {
+    await correctCondition.validateAsync(req.body, {
+      abortEarly: false,
+      allowUnknown: true // đối với trường hợp update, cho phép unknown để ko cần đẩy một số field lên
+    })
+    next()
+
+  } catch (error) {
+    next(new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, Error(error).message)) // mã 422 (UNPROCESSABLE_ENTITY): dữ liệu ko thể thực thi
+  }
+}
+
+const moveCardToDifferentColumn = async (req, res, next) => {
+  // ko dùng required() trong trường hợp update
+  const correctCondition = Joi.object({
+    currentCardId: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
+    prevColumnId: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
+    prevCardOrderIds: Joi.array().required().items(
+      Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
+    ),
+    nextColumnId: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
+    nextCardOrderIds: Joi.array().required().items(
+      Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
+    )
+
+  })
+  try {
+    await correctCondition.validateAsync(req.body, {
+      abortEarly: false
+    })
+    next()
+
+  } catch (error) {
+    next(new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, Error(error).message)) // mã 422 (UNPROCESSABLE_ENTITY): dữ liệu ko thể thực thi
+  }
+}
 export const boardValidation = {
-  createNew
+  createNew,
+  update,
+  moveCardToDifferentColumn
 }

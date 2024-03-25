@@ -14,7 +14,6 @@ const createNew = async (req, res, next) => {
   catch (error) {
     // nó sẽ chuyển luồng điều khiển đến middleware error handling được đăng ký bởi app.use() với ba tham số (err, req, res, next).
     next(error)
-
     // mã 500 (INTERNAL_SERVER_ERROR): lỗi server
   }
 }
@@ -33,7 +32,35 @@ const getDetails = async (req, res, next) => {
   }
 }
 
+const update = async (req, res, next) => {
+  try {
+    // console.log( 'req.params', req.params) //http://localhost:8017/v1/boards/id-123?author=hodev&height=170cm
+    const boardId = req.params.id
+    //sau này sẽ có thêm userId nữa để chỉ lấy board thuộc về user đó thôi
+    const updatedBoard = await boardService.update(boardId, req.body)
+
+    res.status(StatusCodes.OK).json(updatedBoard)
+  }
+  catch (error) {
+    next(error)
+  }
+}
+
+const moveCardToDifferentColumn = async (req, res, next) => {
+  try {
+    //sau này sẽ có thêm userId nữa để chỉ lấy board thuộc về user đó thôi
+    const result = await boardService.moveCardToDifferentColumn(req.body)
+
+    res.status(StatusCodes.OK).json(result)
+  }
+  catch (error) {
+    next(error)
+  }
+}
+
 export const boardController = {
   createNew,
-  getDetails
+  getDetails,
+  update,
+  moveCardToDifferentColumn
 }

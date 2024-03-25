@@ -21,6 +21,47 @@ const createNew = async (req, res, next) => {
   }
 }
 
+const update = async (req, res, next) => {
+  // ko dùng required() trong trường hợp update
+  const correctCondition = Joi.object({
+    // nếu cần làm tính năng di chuyển Column sang board khác thì mới thêm validate boardId
+    // boardId: Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
+    title: Joi.string().min(3).max(50).trim().strict(),
+    cardOrderIds: Joi.array().items(
+      Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
+    )
+
+  })
+  try {
+    await correctCondition.validateAsync(req.body, {
+      abortEarly: false,
+      allowUnknown: true // đối với trường hợp update, cho phép unknown để ko cần đẩy một số field lên
+    })
+    next()
+
+  } catch (error) {
+    next(new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, Error(error).message)) // mã 422 (UNPROCESSABLE_ENTITY): dữ liệu ko thể thực thi
+  }
+}
+
+const deleteItem = async (req, res, next) => {
+  const correctCondition = Joi.object({
+    id: Joi.string().required().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE),
+  })
+  try {
+    //params: Khi bạn gửi một yêu cầu đến /users/123, Express sẽ trích xuất giá trị 123 và đặt nó vào req.params.userId.
+    //Bạn có thể sử dụng giá trị params trong xử lý route để thực hiện các hành động như truy vấn cơ sở dữ liệu
+    //để lấy thông tin về người dùng có userId là 123.
+    await correctCondition.validateAsync(req.params)
+    next()
+
+  } catch (error) {
+    next(new ApiError(StatusCodes.UNPROCESSABLE_ENTITY, Error(error).message)) // mã 422 (UNPROCESSABLE_ENTITY): dữ liệu ko thể thực thi
+  }
+}
+
 export const columnValidation = {
-  createNew
+  createNew,
+  update,
+  deleteItem
 }

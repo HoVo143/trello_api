@@ -18,6 +18,8 @@ const COLUMN_COLLECTION_SCHEMA = Joi.object({
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false)
 })
+//chỉ định ra những Fields mà chúng ta ko muốn cho phép cập nhật trong hàm update
+const INVALID_UPDATE_FIELDS = ['_id', 'boardId', 'createAt']
 
 const validateBeforeCreate = async (data) => {
   // abortEarly mặc định là true kiểm tra xem validate có dừng sớm hay ko / đổi nó về false để hiển thị tất cả dữ liệu rỗng
@@ -44,12 +46,12 @@ const createNew = async (data) => {
 
 //khi làm backend sẽ gặp rất nhiều
 // findOneById chỉ để lấy dữ liệu board
-const findOneById = async(id) => {
+const findOneById = async(columnId) => {
   try {
     //Phương thức findOne() trong MongoDB được sử dụng để tìm kiếm và trả về một tài liệu đầu tiên trong bộ sưu tập (collection)
     // thỏa mãn điều kiện tìm kiếm được chỉ định
     const result = await GET_DB().collection(COLUMN_COLLECTION_NAME).findOne({ //nếu dùng thêm toString() thì id sẽ là dạng string thì findOne ko thể dò id ra dữ liệu trong database
-      _id: new ObjectId(id)
+      _id: new ObjectId(columnId)
     })
     return result
   }
@@ -67,8 +69,50 @@ const pushCardOrderIds = async (card) => {
       { $push: { cardOrderIds: new ObjectId(card._id) } },
       { ReturnDocument: 'after' } // trả về document mới sau khi đã cập nhật
     )
-    return result.value
+    return result
+
   } catch (error) {
+    throw new Error(error)
+  }
+}
+
+const update = async (columnId, updateData) => {
+  try {
+    // kiểm tra dữ liệu ,lấy các key của updateData
+    // xóa đi các key như : _id và createAt, vì ko thể để update
+    Object.keys(updateData).forEach(fieldName => {
+      if (INVALID_UPDATE_FIELDS.includes(fieldName)) {
+        delete updateData[fieldName]
+      }
+    })
+
+    //đối với những dữ liệu liên quan objectId, biến đổi ở đây
+    if (updateData.cardOrderIds) {
+      updateData.cardOrderIds = updateData.cardOrderIds.map(_id => (new ObjectId(_id)))
+    }
+
+    //findOneAndUpdate tìm 1 bản ghi và sau đó cập nhật
+    const result = await GET_DB().collection(COLUMN_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(columnId) },
+      { $set: updateData },
+      { ReturnDocument: 'after' } // trả về document mới sau khi đã cập nhật
+    )
+
+    return result
+
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
+const deleteOneById = async(columnId) => {
+  try {
+    const result = await GET_DB().collection(COLUMN_COLLECTION_NAME).deleteOne({ // deleteOne() trong doc mongodb
+      _id: new ObjectId(columnId)
+    })
+    return result
+  }
+  catch (error) {
     throw new Error(error)
   }
 }
@@ -78,5 +122,7 @@ export const columnModel = {
   COLUMN_COLLECTION_SCHEMA,
   createNew,
   findOneById,
-  pushCardOrderIds
+  pushCardOrderIds,
+  update,
+  deleteOneById
 }

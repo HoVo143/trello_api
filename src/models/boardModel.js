@@ -16,12 +16,15 @@ const BOARD_COLLECTION_SCHEMA = Joi.object({
   // các item trong mảng columnOrderIds là ObjectId nên cần thêm pattern cho chuẩn
   columnOrderIds: Joi.array().items(
     Joi.string().pattern(OBJECT_ID_RULE).message(OBJECT_ID_RULE_MESSAGE)
-  ).default([]), //dùng default([]) giá trị mặc định, khi tạo 1 post mới thì columnOrderIds sẽ xét giá trị luôn là mảng rỗng
+  ).default([]), //dùng default([]) giá trị mặc định, khi tạo 1 board mới thì columnOrderIds sẽ xét giá trị luôn là mảng rỗng
 
   createdAt: Joi.date().timestamp('javascript').default(Date.now),
   updatedAt: Joi.date().timestamp('javascript').default(null),
   _destroy: Joi.boolean().default(false) // xóa mềm, ko xóa hẳn mà sẽ lưu trữ lại bên trang admin
 })
+
+//chỉ định ra những Fields mà chúng ta ko muốn cho phép cập nhật trong hàm update
+const INVALID_UPDATE_FIELDS = ['_id', 'createAt']
 
 const validateBeforeCreate = async (data) => {
   // abortEarly mặc định là true kiểm tra xem validate có dừng sớm hay ko / đổi nó về false để hiển thị tất cả dữ liệu rỗng
@@ -45,13 +48,13 @@ const createNew = async (data) => {
 //khi làm backend sẽ gặp rất nhiều
 // findOneById chỉ để lấy dữ liệu board
 //sử dụng để tìm kiếm một tài liệu trong collection của MongoDB dựa trên một id cụ thể.
-const findOneById = async(id) => {
+const findOneById = async(boardId) => {
   try {
     // console.log( 'Id string: ', id)
     //Phương thức findOne() trong MongoDB được sử dụng để tìm kiếm và trả về một tài liệu đầu tiên trong bộ sưu tập (collection)
     // thỏa mãn điều kiện tìm kiếm được chỉ định
     const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOne({ //nếu dùng thêm toString() thì id sẽ là dạng string thì findOne ko thể dò id ra dữ liệu trong database
-      _id: new ObjectId(id)
+      _id: new ObjectId(boardId)
     })
     return result
   }
@@ -62,9 +65,6 @@ const findOneById = async(id) => {
 // query tổng hợp (aggregate của mongodb) để lấy toàn bộ Columns và Cards thuộc về Board
 const getDetails = async(id) => {
   try {
-    // const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOne({
-    //   _id: new ObjectId(id)
-    // })
     const result = await GET_DB().collection(BOARD_COLLECTION_NAME).aggregate([
       { $match: { // tìm ra cái board
         _id: new ObjectId(id),
@@ -91,6 +91,7 @@ const getDetails = async(id) => {
     throw new Error(error)
   }
 }
+// đẩy 1 ptu columnId vào cuối mảng columnOrderIds
 // Nhiệm vụ function này là push 1 cái giá trị columnId vào cuối mảng columnOrderIds
 const pushColumnOrderIds = async (column) => {
   try {
@@ -100,7 +101,54 @@ const pushColumnOrderIds = async (column) => {
       { $push: { columnOrderIds: new ObjectId(column._id) } },
       { ReturnDocument: 'after' } // trả về document mới sau khi đã cập nhật
     )
-    return result.value
+
+    return result
+
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+// lấy 1 ptu columnId ra khỏi mảng columnOrderIds
+// dùng pull trong mongodb ở trường hợp này để lấy 1 ptu ra khỏi mảng rồi xóa nó đi
+const pullColumnOrderIds = async (column) => {
+  try {
+    //findOneAndUpdate tìm 1 bản ghi và sau đó cập nhật
+    const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(column.boardId) },
+      { $pull: { columnOrderIds: new ObjectId(column._id) } },
+      { ReturnDocument: 'after' } // trả về document mới sau khi đã cập nhật
+    )
+
+    return result
+
+  } catch (error) {
+    throw new Error(error)
+  }
+}
+
+const update = async (boardId, updateData) => {
+  try {
+    // kiểm tra dữ liệu ,lấy các key của updateData
+    // xóa đi các key như : _id và createAt, vì ko thể để update
+    Object.keys(updateData).forEach(fieldName => {
+      if (INVALID_UPDATE_FIELDS.includes(fieldName)) {
+        delete updateData[fieldName]
+      }
+    })
+
+    //đối với những dữ liệu liên quan objectId, biến đổi ở đây
+    if (updateData.columnOrderIds) {
+      updateData.columnOrderIds = updateData.columnOrderIds.map(_id => (new ObjectId(_id)))
+    }
+    //findOneAndUpdate tìm 1 bản ghi và sau đó cập nhật
+    const result = await GET_DB().collection(BOARD_COLLECTION_NAME).findOneAndUpdate(
+      { _id: new ObjectId(boardId) },
+      { $set: updateData },
+      { ReturnDocument: 'after' } // trả về document mới sau khi đã cập nhật
+    )
+
+    return result
+
   } catch (error) {
     throw new Error(error)
   }
@@ -112,7 +160,9 @@ export const boardModel = {
   createNew,
   findOneById,
   getDetails,
-  pushColumnOrderIds
+  pushColumnOrderIds,
+  update,
+  pullColumnOrderIds
 }
 
 //65ffd1f4de0cc75a2b7099d9
