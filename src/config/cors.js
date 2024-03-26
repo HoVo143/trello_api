@@ -7,13 +7,16 @@ import ApiError from '~/utils/ApiError'
 export const corsOptions = {
   // đối số origin đại diện cho WHITELIST_DOMAINS
   origin: function (origin, callback) {
-    console.log('origin', origin)
+    // console.log('origin', origin)
     // Cho phép việc gọi API bằng POSTMAN trên môi trường dev,
-    // Thông thường khi sử dụng POSTMAN thì cái origin sẽ có giá trị là undefined
-    // khi deploy dự án lên một Server Production thì sẽ sửa lại đoạn này thêm một chút để phù hợp với từng mt production hoặc dev
-    if (!origin && env.BUILD_MODE === 'dev') {
+
+    // nếu môi trường là local dev thì cho qua luôn
+    if (env.BUILD_MODE === 'dev') {
       return callback(null, true) // null nghĩa là ko có lỗi / true là kết qả cho phép đi qa
     }
+
+    // ngược lại hiên tại code đang làm còn 1 trường hợp
+    // env.BUILD_MODE === 'production'
 
     // Kiểm tra xem origin có phải là domain được chấp nhận hay không
     if (WHITELIST_DOMAINS.includes(origin)) {
