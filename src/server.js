@@ -26,9 +26,17 @@ const START_SERVER = () => {
   app.use(errorHandlingMiddleware)
 
   // Khởi động máy chủ
-  app.listen(env.APP_PORT, env.APP_HOST, () => {
-    console.log(`3. __Hello ${env.AUTHOR}, I am running at Host: ${ env.APP_HOST } and Port: ${ env.APP_PORT }`)
-  })
+  // môi trường production (render.com)
+  if (env.BUILD_MODE === 'production') {
+    app.listen(process.env.PORT, () => {
+      console.log(`3. __Production: Hello ${env.AUTHOR}, Backend server is running successfully at Port: ${ process.env.PORT }`)
+    })
+  } else {
+    // môi trường local dev
+    app.listen(env.LOCAL_DEV_APP_PORT, env.LOCAL_DEV_APP_HOST, () => {
+      console.log(`3. __Dev: Hello ${env.AUTHOR}, I am running at Host: ${ env.LOCAL_DEV_APP_HOST } and Port: ${ env.LOCAL_DEV_APP_PORT }`)
+    })
+  }
 
   // Xử lý tín hiệu SIGINT (Interrupt Signal) và SIGTERM (Termination Signal)
   process.on('SIGINT', async() => {
