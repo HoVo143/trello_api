@@ -5,6 +5,8 @@ export const WHITELIST_DOMAINS = [
 
   // không cần localhost nữa vì ở file config/cors đã luôn luôn cho phép môi trường env.BUILD_MODE === 'dev'
   //sau này sẽ deploy lên domain chính thức
+
+  'https://reactjs-vite-one.vercel.app/' //domain chính thức
 ]
 
 export const BOARD_TYPES = {
