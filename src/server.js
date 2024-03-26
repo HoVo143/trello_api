@@ -15,7 +15,7 @@ const START_SERVER = () => {
   // corsOptions giúp tránh mọi nơi có thể truy cập tài nguyên
   app.use(cors(corsOptions))
   // Enable req.body json data
-  // /Khi một yêu cầu HTTP gửi đến máy chủ Express với dữ liệu dưới dạng JSON (ví dụ: từ một yêu cầu POST hoặc PUT), 
+  // /Khi một yêu cầu HTTP gửi đến máy chủ Express với dữ liệu dưới dạng JSON (ví dụ: từ một yêu cầu POST hoặc PUT),
   //middleware này sẽ đọc và phân tích dữ liệu JSON và biến nó thành một đối tượng JavaScript trước khi chuyển nó đến các xử lý yêu cầu tiếp theo.
   app.use(express.json())
 
